@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  type KnowledgeBaseVO,
   createKnowledgeBase,
   type CreateKnowledgeBaseRequest,
   getKnowledgeBases,
-} from "../api/agentApi.ts";
+} from "../api/api.ts";
 import type { KnowledgeBase } from "../types";
 
 export function useKnowledgeBases() {

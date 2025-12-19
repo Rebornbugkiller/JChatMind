@@ -4,6 +4,7 @@ import com.kama.jchatmind.model.common.ApiResponse;
 import com.kama.jchatmind.model.request.CreateChatSessionRequest;
 import com.kama.jchatmind.model.request.UpdateChatSessionRequest;
 import com.kama.jchatmind.model.response.CreateChatSessionResponse;
+import com.kama.jchatmind.model.response.GetChatSessionResponse;
 import com.kama.jchatmind.model.response.GetChatSessionsResponse;
 import com.kama.jchatmind.service.ChatSessionFacadeService;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,12 @@ public class ChatSessionController {
     @GetMapping("/chat-sessions")
     public ApiResponse<GetChatSessionsResponse> getChatSessions() {
         return ApiResponse.success(chatSessionFacadeService.getChatSessions());
+    }
+
+    // 查询单个聊天会话
+    @GetMapping("/chat-sessions/{chatSessionId}")
+    public ApiResponse<GetChatSessionResponse> getChatSession(@PathVariable String chatSessionId) {
+        return ApiResponse.success(chatSessionFacadeService.getChatSession(chatSessionId));
     }
 
     // 根据 agentId 查询聊天会话

@@ -3,7 +3,7 @@ import {
   type ChatSessionVO,
   getChatSessions,
   deleteChatSession,
-} from "../api/agentApi.ts";
+} from "../api/api.ts";
 
 export function useChatSessions() {
   const [chatSessions, setChatSessions] = useState<ChatSessionVO[]>([]);
@@ -35,4 +35,3 @@ export function useChatSessions() {
     deleteChatSession: deleteChatSessionHandle,
   };
 }
-

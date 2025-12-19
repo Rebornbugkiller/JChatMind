@@ -69,6 +69,20 @@
         ORDER BY created_at ASC
     </select>
 
+    <select id="selectBySessionIdRecently" resultMap="BaseResultMap">
+        SELECT id,
+               session_id,
+               role,
+               content,
+               metadata::text AS metadata,
+               created_at,
+               updated_at
+        FROM chat_message
+        WHERE session_id = CAST(#{sessionId} AS uuid)
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
     <delete id="deleteById">
         DELETE FROM chat_message WHERE id = CAST(#{id} AS uuid)
     </delete>

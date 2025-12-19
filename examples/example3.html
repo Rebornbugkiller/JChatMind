@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具调用 API 测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .config-section h2 {
+            grid-column: 1 / -1;
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .input-group {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            min-height: 300px;
+            max-height: 500px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message.user {
+            align-items: flex-end;
+        }
+        
+        .message.assistant {
+            align-items: flex-start;
+        }
+        
+        .message.tool {
+            align-items: flex-start;
+        }
+        
+        .message-header {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+            padding: 0 10px;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.tool .message-content {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+            border-bottom-left-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+        }
+        
+        .tool-call-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+            padding: 0 10px;
+            font-style: italic;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .input-area input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+        
+        .loading-indicator {
+            display: inline-block;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            color: #667eea;
+            font-style: italic;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>工具调用 API 测试</h1>
+        
+        <div class="config-section">
+            <h2>配置信息</h2>
+            <div class="input-group">
+                <label for="apiKey">API Key</label>
+                <input type="text" id="apiKey" value="sk-4395dcfa15d8424d922b2f2271b41332" placeholder="请输入 API Key...">
+            </div>
+            <div class="input-group">
+                <label for="baseUrl">Base URL</label>
+                <input type="text" id="baseUrl" value="https://api.deepseek.com" placeholder="请输入基础地址...">
+            </div>
+            <div class="input-group">
+                <label for="model">Model</label>
+                <input type="text" id="model" value="deepseek-chat" placeholder="请输入模型名称...">
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="empty-state">对话历史将显示在这里...<br>支持工具调用：查询日期、查询城市、查询天气</div>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
+                <button id="sendBtn" onclick="sendMessage()">发送</button>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-secondary" onclick="clearChat()">清空对话</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 存储对话历史
+        let conversationHistory = [];
+
+        // 定义工具列表
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "get_current_date",
+                    description: "查询今天的日期",
+                    parameters: {
+                        type: "object",
+                        properties: {},
+                        required: []
+                    }
+                }
+            },
+            {
+                type: "function",
+                function: {
+                    name: "get_current_city",
+                    description: "查询当前所在的城市",
+                    parameters: {
+                        type: "object",
+                        properties: {},
+                        required: []
+                    }
+                }
+            },
+            {
+                type: "function",
+                function: {
+                    name: "get_weather",
+                    description: "根据日期和城市查询天气信息",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            date: {
+                                type: "string",
+                                description: "日期，格式：YYYY-MM-DD"
+                            },
+                            city: {
+                                type: "string",
+                                description: "城市名称"
+                            }
+                        },
+                        required: ["date", "city"]
+                    }
+                }
+            }
+        ];
+
+        // 工具执行函数
+        function executeTool(toolName, arguments) {
+            switch (toolName) {
+                case "get_current_date":
+                    const today = new Date();
+                    const dateStr = today.toISOString().split('T')[0];
+                    return dateStr;
+                case "get_current_city":
+                    return "深圳";
+                case "get_weather":
+                    const { date, city } = arguments;
+                    return `日期：${date}，城市：${city}，天气：晴，温度：25°C，湿度：60%，风力：3级，空气质量：良好`;
+                default:
+                    return `未知工具: ${toolName}`;
+            }
+        }
+
+        function addMessage(role, content, toolCallId = null, toolName = null, toolCalls = null) {
+            const message = { role, content };
+            if (toolCallId) {
+                message.tool_call_id = toolCallId;
+            }
+            if (toolName) {
+                message.tool_name = toolName;
+            }
+            if (toolCalls) {
+                message.tool_calls = toolCalls;
+            }
+            conversationHistory.push(message);
+            renderMessages();
+        }
+
+        function renderMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            if (conversationHistory.length === 0) {
+                chatMessages.innerHTML = '<div class="empty-state">对话历史将显示在这里...<br>支持工具调用：查询日期、查询城市、查询天气</div>';
+                return;
+            }
+            
+            chatMessages.innerHTML = conversationHistory.map((msg, index) => {
+                let roleName, className;
+                if (msg.role === 'user') {
+                    roleName = '用户';
+                    className = 'user';
+                } else if (msg.role === 'tool') {
+                    roleName = `工具: ${msg.tool_name || '未知'}`;
+                    className = 'tool';
+                } else {
+                    roleName = '助手';
+                    className = 'assistant';
+                }
+                
+                const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                const toolInfo = msg.tool_call_id ? `<div class="tool-call-info">工具调用 ID: ${msg.tool_call_id}</div>` : '';
+                const toolCallsInfo = msg.tool_calls ? `<div class="tool-call-info">调用工具: ${msg.tool_calls.map(tc => tc.function.name).join(', ')}</div>` : '';
+                const content = msg.content !== null ? escapeHtml(msg.content) : '<em>（工具调用中...）</em>';
+                
+                return `
+                    <div class="message ${className}">
+                        <div class="message-header">${roleName} · ${time}</div>
+                        <div class="message-content">${content}</div>
+                        ${toolCallsInfo}
+                        ${toolInfo}
+                    </div>
+                `;
+            }).join('');
+            
+            // 滚动到底部
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showLoading() {
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loadingMessage';
+            loadingDiv.innerHTML = `
+                <div class="message-header">助手</div>
+                <div class="loading-indicator">正在思考...</div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        async function callAPI(messages) {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const model = document.getElementById('model').value.trim();
+
+            const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages,
+                    tools: tools,
+                    tool_choice: "auto"
+                })
+            });
+            
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error?.message || `请求失败: ${response.status}`);
+            }
+
+            return data;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = messageInput.value.trim();
+
+            // 验证必填项
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const model = document.getElementById('model').value.trim();
+
+            if (!apiKey) {
+                alert('请输入 API Key');
+                return;
+            }
+
+            if (!baseUrl) {
+                alert('请输入 Base URL');
+                return;
+            }
+
+            if (!model) {
+                alert('请输入 Model');
+                return;
+            }
+
+            if (!message) {
+                alert('请输入消息内容');
+                return;
+            }
+
+            // 添加用户消息
+            addMessage('user', message);
+            messageInput.value = '';
+
+            // 禁用按钮
+            sendBtn.disabled = true;
+            showLoading();
+
+            try {
+                // 循环处理工具调用，直到获得最终回复
+                let maxIterations = 10; // 防止无限循环
+                let iteration = 0;
+
+                while (iteration < maxIterations) {
+                    iteration++;
+
+                    // 构建消息列表（包含历史对话）
+                    const messages = conversationHistory.map(msg => {
+                        const messageObj = {
+                            role: msg.role,
+                            content: msg.content
+                        };
+                        // 如果是 assistant 消息且包含 tool_calls，需要包含 tool_calls
+                        if (msg.role === 'assistant' && msg.tool_calls) {
+                            messageObj.tool_calls = msg.tool_calls;
+                        }
+                        // 如果是工具消息，需要包含 tool_call_id
+                        if (msg.role === 'tool' && msg.tool_call_id) {
+                            messageObj.tool_call_id = msg.tool_call_id;
+                        }
+                        return messageObj;
+                    });
+
+                    const data = await callAPI(messages);
+                    removeLoading();
+
+                    if (!data.choices || data.choices.length === 0) {
+                        throw new Error('响应中没有找到结果');
+                    }
+
+                    const choice = data.choices[0];
+                    const message = choice.message;
+
+                    // 检查是否有工具调用
+                    if (message.tool_calls && message.tool_calls.length > 0) {
+                        // 先添加包含 tool_calls 的 assistant 消息
+                        const assistantContent = message.content || null;
+                        addMessage('assistant', assistantContent, null, null, message.tool_calls);
+                        
+                        // 执行所有工具调用
+                        for (const toolCall of message.tool_calls) {
+                            const toolName = toolCall.function.name;
+                            const toolArgs = JSON.parse(toolCall.function.arguments || '{}');
+                            const toolResult = executeTool(toolName, toolArgs);
+                            
+                            // 添加工具执行结果
+                            addMessage('tool', toolResult, toolCall.id, toolName);
+                        }
+                        
+                        // 继续调用 API 获取最终回复
+                        showLoading();
+                        continue;
+                    } else {
+                        // 没有工具调用，获得最终回复
+                        const assistantMessage = message.content || '（无回复内容）';
+                        addMessage('assistant', assistantMessage);
+                        break;
+                    }
+                }
+
+                if (iteration >= maxIterations) {
+                    throw new Error('工具调用次数过多，可能存在循环');
+                }
+
+            } catch (error) {
+                removeLoading();
+                addMessage('assistant', `错误: ${error.message}`);
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        function clearChat() {
+            if (conversationHistory.length === 0) {
+                return;
+            }
+            
+            if (confirm('确定要清空所有对话记录吗？')) {
+                conversationHistory = [];
+                renderMessages();
+            }
+        }
+
+        // 支持回车键发送
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 页面加载时聚焦输入框
+        window.addEventListener('load', function() {
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
+

@@ -9,6 +9,7 @@ import com.kama.jchatmind.model.entity.ChatSession;
 import com.kama.jchatmind.model.request.CreateChatSessionRequest;
 import com.kama.jchatmind.model.request.UpdateChatSessionRequest;
 import com.kama.jchatmind.model.response.CreateChatSessionResponse;
+import com.kama.jchatmind.model.response.GetChatSessionResponse;
 import com.kama.jchatmind.model.response.GetChatSessionsResponse;
 import com.kama.jchatmind.model.vo.ChatSessionVO;
 import com.kama.jchatmind.service.ChatSessionFacadeService;
@@ -41,6 +42,22 @@ public class ChatSessionFacadeServiceImpl implements ChatSessionFacadeService {
         return GetChatSessionsResponse.builder()
                 .chatSessions(result.toArray(new ChatSessionVO[0]))
                 .build();
+    }
+
+    @Override
+    public GetChatSessionResponse getChatSession(String chatSessionId) {
+        ChatSession chatSession = chatSessionMapper.selectById(chatSessionId);
+        if (chatSession != null) {
+            try {
+                ChatSessionVO vo = chatSessionConverter.toVO(chatSession);
+                return GetChatSessionResponse.builder()
+                        .chatSession(vo)
+                        .build();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        throw new BizException("聊天会话不存在: " + chatSessionId);
     }
 
     @Override

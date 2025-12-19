@@ -6,8 +6,8 @@ import {
   MessageOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import { useChatSessions } from "../hooks/useChatSessions.ts";
-import { useAgents } from "../hooks/useAgents.ts";
+import { useChatSessions } from "../../hooks/useChatSessions.ts";
+import { useAgents } from "../../hooks/useAgents.ts";
 
 const ChatTabContent: React.FC = () => {
   const navigate = useNavigate();

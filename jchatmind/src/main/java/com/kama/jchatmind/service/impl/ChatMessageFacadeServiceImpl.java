@@ -1,7 +1,6 @@
 package com.kama.jchatmind.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kama.jchatmind.converter.ChatMessageConverter;
 import com.kama.jchatmind.event.ChatEvent;
 import com.kama.jchatmind.exception.BizException;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -52,10 +50,34 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
     @Override
     public CreateChatMessageResponse createChatMessage(CreateChatMessageRequest request) {
+        ChatMessage chatMessage = doCreateChatMessage(request);
+        // 发布聊天通知事件
+        publisher.publishEvent(new ChatEvent(
+                        request.getAgentId(),
+                        chatMessage.getSessionId(),
+                        chatMessage.getContent()
+                )
+        );
+        // 返回生成的 chatMessageId
+        return CreateChatMessageResponse.builder()
+                .chatMessageId(chatMessage.getId())
+                .build();
+    }
+
+    @Override
+    public CreateChatMessageResponse agentCreateChatMessage(CreateChatMessageRequest request) {
+        ChatMessage chatMessage = doCreateChatMessage(request);
+
+        // 和 createChatMessage 的区别在于，Agent 创建的 chatMessage 不需要发布事件
+        return CreateChatMessageResponse.builder()
+                .chatMessageId(chatMessage.getId())
+                .build();
+    }
+
+    private ChatMessage doCreateChatMessage(CreateChatMessageRequest request) {
         try {
             // 将 CreateChatMessageRequest 转换为 ChatMessageDTO
             ChatMessageDTO chatMessageDTO = chatMessageConverter.toDTO(request);
-
             // 将 ChatMessageDTO 转换为 ChatMessage 实体
             ChatMessage chatMessage = chatMessageConverter.toEntity(chatMessageDTO);
 
@@ -69,19 +91,7 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             if (result <= 0) {
                 throw new BizException("创建聊天消息失败");
             }
-
-            // 发布聊天通知事
-            publisher.publishEvent(new ChatEvent(
-                            request.getAgentId(),
-                            chatMessage.getSessionId(),
-                            chatMessage.getContent()
-                    )
-            );
-
-            // 返回生成的 chatMessageId
-            return CreateChatMessageResponse.builder()
-                    .chatMessageId(chatMessage.getId())
-                    .build();
+            return chatMessage;
         } catch (JsonProcessingException e) {
             throw new BizException("创建聊天消息时发生序列化错误: " + e.getMessage());
         }

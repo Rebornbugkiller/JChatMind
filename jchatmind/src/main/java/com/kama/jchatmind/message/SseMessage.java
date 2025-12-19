@@ -3,6 +3,7 @@ package com.kama.jchatmind.message;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.ai.chat.messages.Message;
 
 @Data
 @AllArgsConstructor
@@ -17,7 +18,7 @@ public class SseMessage {
     @AllArgsConstructor
     @Builder
     public static class Payload {
-        private String content;
+        private Message message; // 聊天消息
         private Boolean done;
     }
 

@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { message as antdMessage } from "antd";
-import AgentChatHistory from "./AgentChatHistory.tsx";
-import AgentChatInput from "./AgentChatInput.tsx";
+import AgentChatHistory from "./agentChatView/AgentChatHistory.tsx";
+import AgentChatInput from "./agentChatView/AgentChatInput.tsx";
 import {
   type ChatMessageVO,
   createChatMessage,
   createChatSession,
   getChatMessagesBySessionId,
-} from "../api/agentApi.ts";
-import { useAgents } from "../hooks/useAgents.ts";
-import DefaultAgentChatView from "./DefaultAgentChatView.tsx";
-import type { SseMessage } from "../types";
+  getChatSession,
+} from "../../api/api.ts";
+import { useAgents } from "../../hooks/useAgents.ts";
+import EmptyAgentChatView from "./agentChatView/EmptyAgentChatView.tsx";
+import type { SseMessage, SseMessageType } from "../../types";
 
 const AgentChatView: React.FC = () => {
   const { chatSessionId } = useParams<{ chatSessionId: string }>();
@@ -20,14 +21,10 @@ const AgentChatView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { agents } = useAgents();
 
-  // 从 URL 查询参数中获取 agentId，如果没有则使用第一个 agent
-  const searchParams = new URLSearchParams(location.search);
-  const agentIdFromUrl = searchParams.get("agentId");
-
-  const defaultAgentId = agents.length > 0 ? agents[0].id : null;
-  const agentId = agentIdFromUrl || defaultAgentId;
-
   const [messages, setMessages] = useState<ChatMessageVO[]>([]);
+
+  /// const [chatSession, setChatSession] = useState<ChatSessionVO | null>(null);
+  const [agentId, setAgentId] = useState<string>("");
 
   const getChatMessages = useCallback(async () => {
     if (!chatSessionId) {
@@ -35,6 +32,13 @@ const AgentChatView: React.FC = () => {
     }
     const resp = await getChatMessagesBySessionId(chatSessionId);
     setMessages(resp.chatMessages);
+
+    const fetchData = async () => {
+      const resp = await getChatSession(chatSessionId);
+      // setChatSession(resp.chatSession);
+      setAgentId(resp.chatSession.agentId);
+    };
+    fetchData().then();
   }, [chatSessionId]);
 
   useEffect(() => {
@@ -47,7 +51,9 @@ const AgentChatView: React.FC = () => {
   const appendAssistantMessage = useCallback(
     (messageId: string, content: string) => {
       setMessages((prevMessages) => {
-        const existingMessage = prevMessages.find((message) => message.id === messageId);
+        const existingMessage = prevMessages.find(
+          (message) => message.id === messageId,
+        );
         if (existingMessage) {
           // 已经存在，append
           console.log("append", messageId, content);
@@ -96,7 +102,7 @@ const AgentChatView: React.FC = () => {
       try {
         const response = await createChatSession({
           agentId: agentId,
-          title: message.slice(0, 20), // 使用消息的前 20 个字符作为标题
+          title: message.slice(0, 20),
         });
         // 导航到新创建的会话
         navigate(`/chat/${response.chatSessionId}`, {
@@ -135,6 +141,12 @@ const AgentChatView: React.FC = () => {
     }
   };
 
+  const [displayAgentStatus, setDisplayAgentStatus] = useState<boolean>(false);
+  const [agentStatusText, setAgentStatusText] = useState("");
+  const [agentStatusType, setAgentStatusType] = useState<
+    SseMessageType | undefined
+  >(undefined);
+
   useEffect(() => {
     // sse 连接处理, 不是对话消息不开连接
     if (!chatSessionId) {
@@ -157,6 +169,24 @@ const AgentChatView: React.FC = () => {
         // 将 AI 生成的内容拼接进 messages
         const chatMessageId = message.metadata.chatMessageId;
         appendAssistantMessage(chatMessageId, message.payload.content);
+      } else if (message.type === "AI_PLANNING") {
+        setDisplayAgentStatus(true);
+        setAgentStatusText(message.payload.content);
+        setAgentStatusType("AI_PLANNING");
+      } else if (message.type === "AI_THINKING") {
+        setDisplayAgentStatus(true);
+        setAgentStatusText(message.payload.content);
+        setAgentStatusType("AI_THINKING");
+      } else if (message.type === "AI_EXECUTING") {
+        setDisplayAgentStatus(true);
+        setAgentStatusText(message.payload.content);
+        setAgentStatusType("AI_EXECUTING");
+      } else if (message.type === "AI_DONE") {
+        setDisplayAgentStatus(false);
+        setAgentStatusText("");
+        setAgentStatusType(undefined);
+      } else {
+        throw new Error(`Unknown message type: ${message.type}`);
       }
     });
 
@@ -173,7 +203,8 @@ const AgentChatView: React.FC = () => {
   // 如果没有 chatSessionId，显示提示界面
   if (!chatSessionId) {
     return (
-      <DefaultAgentChatView
+      <EmptyAgentChatView
+        agents={agents}
         loading={loading}
         handleSendMessage={handleSendMessage}
       />
@@ -184,7 +215,12 @@ const AgentChatView: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 px-16 pt-4 overflow-y-scroll">
-        <AgentChatHistory messages={messages} />
+        <AgentChatHistory
+          messages={messages}
+          displayAgentStatus={displayAgentStatus}
+          agentStatusText={agentStatusText}
+          agentStatusType={agentStatusType}
+        />
       </div>
       <div className="border-t border-gray-200 p-4 bg-white">
         <AgentChatInput onSend={handleSendMessage} />

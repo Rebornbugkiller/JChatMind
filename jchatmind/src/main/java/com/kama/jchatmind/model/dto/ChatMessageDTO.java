@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -25,7 +26,18 @@ public class ChatMessageDTO {
 
     private LocalDateTime updatedAt;
 
+    @Data
     public static class MetaData {
+        private String toolCallId;
+        private List<ToolCall> toolCalls;
+    }
+
+    @Data
+    public static class ToolCall {
+        private String id;
+        private String type;
+        private String name;
+        private String arguments;
     }
 
     @Getter
@@ -34,7 +46,7 @@ public class ChatMessageDTO {
         USER("user"),
         ASSISTANT("assistant"),
         SYSTEM("system"),
-        TOOL("tools");
+        TOOL("tool");
 
         @JsonValue
         private final String role;

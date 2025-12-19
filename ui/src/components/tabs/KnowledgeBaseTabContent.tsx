@@ -1,41 +1,14 @@
 import React, { useMemo } from "react";
 import { Button, Divider } from "antd";
 import { PlusOutlined, BookOutlined } from "@ant-design/icons";
-import type { KnowledgeBase } from "../types";
+import type { KnowledgeBase } from "../../types";
+import { getKnowledgeBaseEmoji } from "../../utils";
 
 interface KnowledgeBaseTabContentProps {
   knowledgeBases: KnowledgeBase[];
   onCreateKnowledgeBaseClick?: () => void;
   onSelectKnowledgeBase?: (knowledgeBaseId: string) => void;
 }
-
-// 知识库相关的 emoji 列表
-const KNOWLEDGE_BASE_EMOJI_LIST = [
-  "📚",
-  "📖",
-  "📝",
-  "📋",
-  "📑",
-  "📄",
-  "📃",
-  "📊",
-  "📈",
-  "📉",
-];
-
-/**
- * 根据知识库 id 生成一个固定的 emoji
- */
-const getKnowledgeBaseEmoji = (knowledgeBaseId: string): string => {
-  // 使用知识库 id 的哈希值来选择 emoji，确保同一个知识库总是显示相同的 emoji
-  let hash = 0;
-  for (let i = 0; i < knowledgeBaseId.length; i++) {
-    hash = (hash << 5) - hash + knowledgeBaseId.charCodeAt(i);
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  const index = Math.abs(hash) % KNOWLEDGE_BASE_EMOJI_LIST.length;
-  return KNOWLEDGE_BASE_EMOJI_LIST[index];
-};
 
 const KnowledgeBaseTabContent: React.FC<KnowledgeBaseTabContentProps> = ({
   knowledgeBases,
@@ -49,7 +22,7 @@ const KnowledgeBaseTabContent: React.FC<KnowledgeBaseTabContentProps> = ({
       emoji: getKnowledgeBaseEmoji(kb.knowledgeBaseId),
     }));
   }, [knowledgeBases]);
-  
+
   return (
     <div className="flex flex-col h-full">
       <Button

@@ -10,6 +10,8 @@ public interface ChatMessageFacadeService {
 
     CreateChatMessageResponse createChatMessage(CreateChatMessageRequest request);
 
+    CreateChatMessageResponse agentCreateChatMessage(CreateChatMessageRequest request);
+
     CreateChatMessageResponse appendChatMessage(String chatMessageId, String appendContent);
 
     void deleteChatMessage(String chatMessageId);

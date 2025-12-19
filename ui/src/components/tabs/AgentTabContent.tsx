@@ -7,7 +7,8 @@ import {
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import type { AgentVO } from "../api/agentApi.ts";
+import type { AgentVO } from "../../api/api.ts";
+import { formatDateTime, getAgentEmoji } from "../../utils";
 
 interface AgentTabContentProps {
   agents: AgentVO[];
@@ -16,63 +17,6 @@ interface AgentTabContentProps {
   onEditAgent?: (agent: AgentVO) => void;
   onDeleteAgent?: (agentId: string) => void;
 }
-
-// 常用的 emoji 列表
-const EMOJI_LIST = [
-  "🤖",
-  "🎯",
-  "🚀",
-  "💡",
-  "🔮",
-  "⚡",
-  "🌟",
-  "🎨",
-  "🔧",
-  "📚",
-];
-
-/**
- * 根据 agent id 生成一个固定的 emoji
- */
-const getAgentEmoji = (agentId: string): string => {
-  // 使用 agent id 的哈希值来选择 emoji，确保同一个 agent 总是显示相同的 emoji
-  let hash = 0;
-  for (let i = 0; i < agentId.length; i++) {
-    hash = (hash << 5) - hash + agentId.charCodeAt(i);
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  const index = Math.abs(hash) % EMOJI_LIST.length;
-  return EMOJI_LIST[index];
-};
-
-/**
- * 格式化日期时间
- */
-const formatDateTime = (dateString?: string): string => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  if (days === 0) {
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    if (hours === 0) {
-      const minutes = Math.floor(diff / (1000 * 60));
-      return minutes <= 0 ? "刚刚" : `${minutes}分钟前`;
-    }
-    return `${hours}小时前`;
-  } else if (days === 1) {
-    return "昨天";
-  } else if (days < 7) {
-    return `${days}天前`;
-  } else {
-    return date.toLocaleDateString("zh-CN", {
-      month: "short",
-      day: "numeric",
-    });
-  }
-};
 
 const AgentTabContent: React.FC<AgentTabContentProps> = ({
   agents,

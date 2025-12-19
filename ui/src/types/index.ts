@@ -1,20 +1,7 @@
-// Agent
-export interface Agent {
-  agentId: string;
-  name: string;
-  emoji: string;
-  description: string;
-}
-
 export interface KnowledgeBase {
   knowledgeBaseId: string;
   name: string;
   description: string;
-}
-
-export interface ChatSession {
-  // session
-  chatSessionId: string;
 }
 
 export type SseMessageType =

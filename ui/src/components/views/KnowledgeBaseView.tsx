@@ -18,9 +18,9 @@ import {
   FileOutlined,
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
-import { useKnowledgeBases } from "../hooks/useKnowledgeBases.ts";
-import { useDocuments } from "../hooks/useDocuments.ts";
-import { uploadDocument, type DocumentVO } from "../api/agentApi.ts";
+import { useKnowledgeBases } from "../../hooks/useKnowledgeBases.ts";
+import { useDocuments } from "../../hooks/useDocuments.ts";
+import { uploadDocument, type DocumentVO } from "../../api/api.ts";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -51,6 +51,7 @@ const KnowledgeBaseView: React.FC = () => {
     }
 
     setUploading(true);
+
     try {
       await uploadDocument(knowledgeBaseId, file as File);
       message.success("文档上传成功");

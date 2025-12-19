@@ -3,7 +3,7 @@ import {
   type DocumentVO,
   getDocumentsByKbId,
   deleteDocument,
-} from "../api/agentApi.ts";
+} from "../api/api.ts";
 
 export function useDocuments(kbId: string | undefined) {
   const [documents, setDocuments] = useState<DocumentVO[]>([]);

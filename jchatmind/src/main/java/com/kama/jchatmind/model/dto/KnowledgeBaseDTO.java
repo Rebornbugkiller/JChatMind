@@ -24,4 +24,13 @@ public class KnowledgeBaseDTO {
     public static class MetaData {
         private String version;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

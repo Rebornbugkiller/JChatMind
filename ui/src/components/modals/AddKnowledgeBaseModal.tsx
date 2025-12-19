@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button, Input, Modal } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { SaveOutlined } from "@ant-design/icons";
-import { type CreateKnowledgeBaseRequest } from "../api/agentApi.ts";
+import { type CreateKnowledgeBaseRequest } from "../../api/api.ts";
 
 interface AddKnowledgeBaseModalProps {
   open: boolean;
@@ -21,15 +21,15 @@ const AddKnowledgeBaseModal: React.FC<AddKnowledgeBaseModalProps> = ({
     name: "",
     description: "",
   });
-
+  
   const [createLoading, setCreateLoading] = useState(false);
-
+  
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       return;
     }
-
     setCreateLoading(true);
+    
     try {
       await createKnowledgeBaseHandle(formData);
       // 重置表单
@@ -106,4 +106,3 @@ const AddKnowledgeBaseModal: React.FC<AddKnowledgeBaseModalProps> = ({
 };
 
 export default AddKnowledgeBaseModal;
-

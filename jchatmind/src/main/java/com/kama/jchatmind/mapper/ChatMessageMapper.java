@@ -19,6 +19,8 @@ public interface ChatMessageMapper {
 
     List<ChatMessage> selectBySessionId(String sessionId);
 
+    List<ChatMessage> selectBySessionIdRecently(String session, int limit);
+
     int deleteById(String id);
 
     int updateById(ChatMessage chatMessage);

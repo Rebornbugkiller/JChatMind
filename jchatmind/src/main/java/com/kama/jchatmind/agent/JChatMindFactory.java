@@ -22,9 +22,9 @@ import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JChatMindFactory {
@@ -66,55 +66,93 @@ public class JChatMindFactory {
         this.chatMessageFacadeService = chatMessageFacadeService;
     }
 
-    public JChatMind create(String agentId, String chatSessionId) {
-        Agent agent = agentMapper.selectById(agentId);
+    private Agent loadAgent(String agentId) {
+        return agentMapper.selectById(agentId);
+    }
 
-        // 可用工具分为两类：固定工具和可选工具
-        List<Tool> availableToolList = new ArrayList<>(toolFacadeService.getFixedTools());
-
-        List<KnowledgeBaseDTO> availableKbList = new ArrayList<>();
-        List<Tool> tools = toolFacadeService.getOptionalTools();
-
+    private AgentDTO toAgentConfig(Agent agent) {
         try {
-            AgentDTO agentDTO = this.agentConverter.toDTO(agent);
+            return agentConverter.toDTO(agent);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("解析 Agent 配置失败", e);
+        }
+    }
 
-            List<String> allowedKbs = agentDTO.getAllowedKbs();
-            List<KnowledgeBase> knowledgeBases = knowledgeBaseMapper.selectByIdBatch(allowedKbs);
+    private List<KnowledgeBaseDTO> resolveRuntimeKnowledgeBases(AgentDTO agentConfig) {
+        List<String> allowedKbIds = agentConfig.getAllowedKbs();
+        if (allowedKbIds == null || allowedKbIds.isEmpty()) {
+            return Collections.emptyList();
+        }
 
+        List<KnowledgeBase> knowledgeBases = knowledgeBaseMapper.selectByIdBatch(allowedKbIds);
+        if (knowledgeBases.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<KnowledgeBaseDTO> kbDTOs = new ArrayList<>();
+        try {
             for (KnowledgeBase knowledgeBase : knowledgeBases) {
-                KnowledgeBaseDTO kbDTO = this.knowledgeBaseConverter.toDTO(knowledgeBase);
-                availableKbList.add(kbDTO);
-            }
-
-            List<String> allowedTools = agentDTO.getAllowedTools();
-            for (String toolName : allowedTools) {
-                for (Tool tool : tools) {
-                    if (tool.getName().equals(toolName)) {
-                        availableToolList.add(tool);
-                    }
-                }
+                KnowledgeBaseDTO kbDTO = knowledgeBaseConverter.toDTO(knowledgeBase);
+                kbDTOs.add(kbDTO);
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+        return kbDTOs;
+    }
 
-        // 为每个工具对象单独创建 ToolCallback，使用 AopUtils 获取实际目标对象以避免 Spring 代理问题
-        List<ToolCallback> toolCallbackList = new ArrayList<>();
-        for (Tool tool : availableToolList) {
-            try {
-                // 获取实际的目标对象
-                Object targetObject = AopUtils.isAopProxy(tool) ? AopUtils.getTargetClass(tool) : tool;
-                ToolCallback[] callbacks = MethodToolCallbackProvider.builder()
-                        .toolObjects(targetObject)
-                        .build()
-                        .getToolCallbacks();
-                toolCallbackList.addAll(Arrays.asList(callbacks));
-            } catch (Exception e) {
-                // 如果某个工具无法创建 ToolCallback，记录错误但继续处理其他工具
-                throw new RuntimeException("无法为工具 " + tool.getName() + " 创建 ToolCallback", e);
-            }
+    private List<Tool> resolveRuntimeTools(AgentDTO agentConfig) {
+        // 固定工具（系统强制）
+        List<Tool> runtimeTools = new ArrayList<>(toolFacadeService.getFixedTools());
+
+        // 可选工具（按 Agent 配置）
+        List<String> allowedToolNames = agentConfig.getAllowedTools();
+        if (allowedToolNames == null || allowedToolNames.isEmpty()) {
+            return runtimeTools;
         }
 
+        Map<String, Tool> optionalToolMap = toolFacadeService.getOptionalTools()
+                .stream()
+                .collect(Collectors.toMap(Tool::getName, Function.identity()));
+
+        for (String toolName : allowedToolNames) {
+            Tool tool = optionalToolMap.get(toolName);
+            if (tool != null) {
+                runtimeTools.add(tool);
+            }
+        }
+        return runtimeTools;
+    }
+
+    private List<ToolCallback> buildToolCallbacks(List<Tool> runtimeTools) {
+        List<ToolCallback> callbacks = new ArrayList<>();
+        for (Tool tool : runtimeTools) {
+            Object target = resolveToolTarget(tool);
+            ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
+                    .toolObjects(target)
+                    .build()
+                    .getToolCallbacks();
+            callbacks.addAll(Arrays.asList(toolCallbacks));
+        }
+        return callbacks;
+    }
+
+    private Object resolveToolTarget(Tool tool) {
+        try {
+            return AopUtils.isAopProxy(tool)
+                    ? AopUtils.getTargetClass(tool)
+                    : tool;
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "解析工具目标对象失败: " + tool.getName(), e);
+        }
+    }
+
+    private JChatMind buildAgentRuntime(
+            Agent agent,
+            List<KnowledgeBaseDTO> knowledgeBases,
+            List<ToolCallback> toolCallbacks,
+            String chatSessionId
+    ) {
         return new JChatMind(
                 agent.getId(),
                 agent.getName(),
@@ -122,12 +160,31 @@ public class JChatMindFactory {
                 agent.getSystemPrompt(),
                 chatModel,
                 deepSeekChatClient,
-                toolCallbackList,
-                availableKbList,
+                toolCallbacks,
+                knowledgeBases,
                 chatSessionId,
                 sseService,
                 objectMapper,
                 chatMessageFacadeService
+        );
+    }
+
+    public JChatMind create(String agentId, String chatSessionId) {
+        Agent agent = loadAgent(agentId);
+        AgentDTO agentConfig = toAgentConfig(agent);
+
+        // 解析 agent 的支持的知识库
+        List<KnowledgeBaseDTO> knowledgeBases = resolveRuntimeKnowledgeBases(agentConfig);
+        // 解析 agent 支持的工具调用
+        List<Tool> runtimeTools = resolveRuntimeTools(agentConfig);
+        // 将工具调用转换成 ToolCallback 的形式
+        List<ToolCallback> toolCallbacks = buildToolCallbacks(runtimeTools);
+
+        return buildAgentRuntime(
+                agent,
+                knowledgeBases,
+                toolCallbacks,
+                chatSessionId
         );
     }
 }

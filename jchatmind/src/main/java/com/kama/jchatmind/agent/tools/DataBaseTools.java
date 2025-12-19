@@ -40,7 +40,7 @@ public class DataBaseTools implements Tool {
      * @param sql SQL 查询语句（仅支持 SELECT 查询）
      * @return 格式化的查询结果字符串
      */
-    @org.springframework.ai.tool.annotation.Tool(name = "databaseQuery", description = "执行一条 SQL, 从数据库中进行查询数据。仅支持 SELECT 查询语句。")
+    @org.springframework.ai.tool.annotation.Tool(name = "databaseQuery", description = "用于在 PostgreSQL 中执行只读查询（SELECT）。接收由模型生成的查询语句，并返回结构化数据结果。该工具仅用于检索数据，严禁任何写入或修改数据库的语句。")
     public String query(String sql) {
         try {
             // 验证 SQL 语句安全性（只允许 SELECT 查询）

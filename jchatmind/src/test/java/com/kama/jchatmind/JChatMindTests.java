@@ -1,8 +1,13 @@
 package com.kama.jchatmind;
 
-import com.kama.jchatmind.agent.JChatMindFactory;
-import com.kama.jchatmind.service.RagService;
+import com.kama.jchatmind.agent.JChatMindTest;
+import com.kama.jchatmind.agent.tools.test.CityTool;
+import com.kama.jchatmind.agent.tools.test.DateTool;
+import com.kama.jchatmind.agent.tools.test.WeatherTool;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -10,20 +15,24 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class JChatMindTests {
 
     @Autowired
-    JChatMindFactory jChatMindFactory;
+    private ChatClient deepSeekChatClient;
 
     @Autowired
-    RagService ragService;
+    private CityTool cityTool;
+
+    @Autowired
+    private DateTool dateTool;
+
+    @Autowired
+    private WeatherTool weatherTool;
 
     @Test
-    public void simpleTest() {
-//        JChatMind jChatMind = jChatMindFactory.create();
-//        jChatMind.run("生命的意义是什么，将你的回答写在 output.txt 文件内。");
-    }
-
-    @Test
-    public void simpleTest2() {
-        // simple test
-        ragService.similaritySearch("12f73f6a-3c1e-44c3-96d2-78211fcb3b77", "评论表");
+    public void test() {
+        ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
+                .toolObjects(cityTool, dateTool, weatherTool)
+                .build()
+                .getToolCallbacks();
+        JChatMindTest jChatMindTest = new JChatMindTest(deepSeekChatClient, toolCallbacks);
+        jChatMindTest.run("今天的天气怎么样？");
     }
 }

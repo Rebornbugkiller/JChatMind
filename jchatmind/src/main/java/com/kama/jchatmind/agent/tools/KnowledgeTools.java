@@ -16,12 +16,12 @@ public class KnowledgeTools implements Tool {
 
     @Override
     public String getName() {
-        return "";
+        return "KnowledgeTool";
     }
 
     @Override
     public String getDescription() {
-        return "";
+        return "用于从知识库执行语义检索（RAG）。输入知识库 ID 和查询文本，返回与查询最相关的内容片段。";
     }
 
     @Override
@@ -29,8 +29,11 @@ public class KnowledgeTools implements Tool {
         return ToolType.FIXED;
     }
 
-    @org.springframework.ai.tool.annotation.Tool(name = "knowledgeTool", description = "A tool for retrieving information from a knowledge base.")
-    public String knowledgeTool(String kbsId, String query) {
+    @org.springframework.ai.tool.annotation.Tool(
+            name = "KnowledgeTool",
+            description = "从指定知识库中执行相似性检索（RAG）。参数为知识库 ID（kbsId）和查询文本（query），返回与查询最相关的知识片段。"
+    )
+    public String knowledgeQuery(String kbsId, String query) {
         List<String> strings = ragService.similaritySearch(kbsId, query);
         return String.join("\n", strings);
     }

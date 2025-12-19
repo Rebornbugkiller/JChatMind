@@ -7,7 +7,7 @@ import {
   deleteAgent,
   updateAgent,
   type UpdateAgentRequest,
-} from "../api/agentApi.ts";
+} from "../api/api.ts";
 
 export function useAgents() {
   const [agents, setAgents] = useState<AgentVO[]>([]);

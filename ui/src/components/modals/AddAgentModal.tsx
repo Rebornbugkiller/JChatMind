@@ -9,8 +9,8 @@ import {
   type ModelType,
   getOptionalTools,
   type ToolVO,
-} from "../api/agentApi.ts";
-import { useKnowledgeBases } from "../hooks/useKnowledgeBases.ts";
+} from "../../api/api.ts";
+import { useKnowledgeBases } from "../../hooks/useKnowledgeBases.ts";
 
 interface AddAgentModalProps {
   open: boolean;
