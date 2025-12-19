@@ -1,4 +1,5 @@
 import { get, post, patch, del } from "./http.ts";
+import type { ChatMessageVO, MessageType } from "../types";
 
 // 类型定义
 export interface ChatOptions {
@@ -8,11 +9,6 @@ export interface ChatOptions {
 }
 
 export type ModelType = "deepseek-chat" | "glm-4.6";
-
-export const ModelTypeValues = {
-  DEEPSEEK_CHAT: "deepseek-chat" as ModelType,
-  GLM_4_6: "glm-4.6" as ModelType,
-} as Record<string, ModelType>;
 
 export interface CreateAgentRequest {
   name: string;
@@ -172,25 +168,8 @@ export async function deleteChatSession(chatSessionId: string): Promise<void> {
 /**
  * 聊天消息相关类型和接口
  */
-export type RoleType = "user" | "assistant" | "system" | "tool";
-
-export const RoleTypeValues = {
-  USER: "user" as RoleType,
-  ASSISTANT: "assistant" as RoleType,
-  SYSTEM: "system" as RoleType,
-  TOOL: "tool" as RoleType,
-} as Record<string, RoleType>;
-
 export interface MetaData {
   [key: string]: unknown;
-}
-
-export interface ChatMessageVO {
-  id: string;
-  sessionId: string;
-  role: RoleType;
-  content: string;
-  metadata?: MetaData;
 }
 
 export interface GetChatMessagesResponse {
@@ -200,7 +179,7 @@ export interface GetChatMessagesResponse {
 export interface CreateChatMessageRequest {
   agentId: string;
   sessionId: string;
-  role: RoleType;
+  role: MessageType;
   content: string;
   metadata?: MetaData;
 }
@@ -379,11 +358,6 @@ export async function deleteDocument(documentId: string): Promise<void> {
  * 工具相关类型和接口
  */
 export type ToolType = "FIXED" | "OPTIONAL";
-
-export const ToolTypeValues = {
-  FIXED: "FIXED" as ToolType,
-  OPTIONAL: "OPTIONAL" as ToolType,
-} as Record<string, ToolType>;
 
 export interface ToolVO {
   name: string;

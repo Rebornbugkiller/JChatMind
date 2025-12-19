@@ -4,7 +4,6 @@ import { message as antdMessage } from "antd";
 import AgentChatHistory from "./agentChatView/AgentChatHistory.tsx";
 import AgentChatInput from "./agentChatView/AgentChatInput.tsx";
 import {
-  type ChatMessageVO,
   createChatMessage,
   createChatSession,
   getChatMessagesBySessionId,
@@ -12,7 +11,7 @@ import {
 } from "../../api/api.ts";
 import { useAgents } from "../../hooks/useAgents.ts";
 import EmptyAgentChatView from "./agentChatView/EmptyAgentChatView.tsx";
-import type { SseMessage, SseMessageType } from "../../types";
+import type { ChatMessageVO, SseMessage, SseMessageType } from "../../types";
 
 const AgentChatView: React.FC = () => {
   const { chatSessionId } = useParams<{ chatSessionId: string }>();
@@ -23,7 +22,10 @@ const AgentChatView: React.FC = () => {
 
   const [messages, setMessages] = useState<ChatMessageVO[]>([]);
 
-  /// const [chatSession, setChatSession] = useState<ChatSessionVO | null>(null);
+  const addMessage = (message: ChatMessageVO) => {
+    setMessages((prevMessages) => [...prevMessages, message]);
+  };
+
   const [agentId, setAgentId] = useState<string>("");
 
   const getChatMessages = useCallback(async () => {
@@ -47,42 +49,6 @@ const AgentChatView: React.FC = () => {
     }
     getChatMessages().then();
   }, [chatSessionId, getChatMessages]);
-
-  const appendAssistantMessage = useCallback(
-    (messageId: string, content: string) => {
-      setMessages((prevMessages) => {
-        const existingMessage = prevMessages.find(
-          (message) => message.id === messageId,
-        );
-        if (existingMessage) {
-          // 已经存在，append
-          console.log("append", messageId, content);
-          return prevMessages.map((message) =>
-            message.id === messageId
-              ? {
-                  ...message,
-                  content: message.content + content,
-                }
-              : message,
-          );
-        } else {
-          // 不存在则增加
-          console.log("add", messageId, content);
-          return [
-            ...prevMessages,
-            {
-              id: messageId,
-              content: content,
-              role: "assistant",
-              sessionId: chatSessionId ?? "",
-              metadata: {},
-            },
-          ];
-        }
-      });
-    },
-    [chatSessionId],
-  );
 
   const handleSendMessage = async (value: string | { text: string }) => {
     // 处理 Sender 组件可能传递的不同格式
@@ -166,20 +132,19 @@ const AgentChatView: React.FC = () => {
       // 解析 JSON
       const message = JSON.parse(event.data) as SseMessage;
       if (message.type === "AI_GENERATED_CONTENT") {
-        // 将 AI 生成的内容拼接进 messages
-        const chatMessageId = message.metadata.chatMessageId;
-        appendAssistantMessage(chatMessageId, message.payload.content);
+        // 将 AI 生成的内容存到 messages 中
+        addMessage(message.payload.message);
       } else if (message.type === "AI_PLANNING") {
         setDisplayAgentStatus(true);
-        setAgentStatusText(message.payload.content);
+        setAgentStatusText(message.payload.statusText);
         setAgentStatusType("AI_PLANNING");
       } else if (message.type === "AI_THINKING") {
         setDisplayAgentStatus(true);
-        setAgentStatusText(message.payload.content);
+        setAgentStatusText(message.payload.statusText);
         setAgentStatusType("AI_THINKING");
       } else if (message.type === "AI_EXECUTING") {
         setDisplayAgentStatus(true);
-        setAgentStatusText(message.payload.content);
+        setAgentStatusText(message.payload.statusText);
         setAgentStatusType("AI_EXECUTING");
       } else if (message.type === "AI_DONE") {
         setDisplayAgentStatus(false);
@@ -198,7 +163,7 @@ const AgentChatView: React.FC = () => {
       console.log("Closing SSE connection.");
       es.close();
     };
-  }, [chatSessionId, appendAssistantMessage]);
+  }, [chatSessionId]);
 
   // 如果没有 chatSessionId，显示提示界面
   if (!chatSessionId) {

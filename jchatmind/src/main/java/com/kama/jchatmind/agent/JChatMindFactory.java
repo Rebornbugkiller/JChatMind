@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kama.jchatmind.agent.tools.Tool;
 import com.kama.jchatmind.converter.AgentConverter;
+import com.kama.jchatmind.converter.ChatMessageConverter;
 import com.kama.jchatmind.converter.KnowledgeBaseConverter;
 import com.kama.jchatmind.mapper.AgentMapper;
 import com.kama.jchatmind.mapper.KnowledgeBaseMapper;
@@ -40,6 +41,7 @@ public class JChatMindFactory {
     private final KnowledgeBaseConverter knowledgeBaseConverter;
     private final ToolFacadeService toolFacadeService;
     private final ChatMessageFacadeService chatMessageFacadeService;
+    private final ChatMessageConverter chatMessageConverter;
 
     public JChatMindFactory(DeepSeekChatModel chatModel,
                             ChatClient deepSeekChatClient,
@@ -51,7 +53,8 @@ public class JChatMindFactory {
                             KnowledgeBaseMapper knowledgeBaseMapper,
                             KnowledgeBaseConverter knowledgeBaseConverter,
                             ToolFacadeService toolFacadeService,
-                            ChatMessageFacadeService chatMessageFacadeService
+                            ChatMessageFacadeService chatMessageFacadeService,
+                            ChatMessageConverter chatMessageConverter
     ) {
         this.chatModel = chatModel;
         this.deepSeekChatClient = deepSeekChatClient;
@@ -64,6 +67,7 @@ public class JChatMindFactory {
         this.knowledgeBaseConverter = knowledgeBaseConverter;
         this.toolFacadeService = toolFacadeService;
         this.chatMessageFacadeService = chatMessageFacadeService;
+        this.chatMessageConverter = chatMessageConverter;
     }
 
     private Agent loadAgent(String agentId) {
@@ -165,7 +169,8 @@ public class JChatMindFactory {
                 chatSessionId,
                 sseService,
                 objectMapper,
-                chatMessageFacadeService
+                chatMessageFacadeService,
+                chatMessageConverter
         );
     }
 

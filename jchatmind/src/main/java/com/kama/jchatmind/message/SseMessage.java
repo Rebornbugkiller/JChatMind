@@ -1,9 +1,9 @@
 package com.kama.jchatmind.message;
 
+import com.kama.jchatmind.model.vo.ChatMessageVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.ai.chat.messages.Message;
 
 @Data
 @AllArgsConstructor
@@ -18,7 +18,8 @@ public class SseMessage {
     @AllArgsConstructor
     @Builder
     public static class Payload {
-        private Message message; // 聊天消息
+        private ChatMessageVO message;
+        private String statusText;
         private Boolean done;
     }
 

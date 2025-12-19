@@ -1,8 +1,14 @@
-import React from "react";
-import type { ChatMessageVO } from "../../../api/api.ts";
+import React, { useState } from "react";
 import { Bubble } from "@ant-design/x";
 import XMarkdown from "@ant-design/x-markdown";
-import type { SseMessageType } from "../../../types";
+import {
+  ToolOutlined,
+  CheckCircleOutlined,
+  RobotOutlined,
+  DownOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
+import type { ChatMessageVO, SseMessageType, ToolCall, ToolResponse } from "../../../types";
 
 interface AgentChatHistoryProps {
   messages: ChatMessageVO[];
@@ -10,6 +16,90 @@ interface AgentChatHistoryProps {
   agentStatusText?: string;
   agentStatusType?: SseMessageType;
 }
+
+// 工具调用展示组件（简化版，用于 assistant 消息内）
+const ToolCallDisplay: React.FC<{ toolCall: ToolCall }> = ({ toolCall }) => {
+  let parsedArgs: Record<string, unknown> = {};
+  try {
+    parsedArgs = JSON.parse(toolCall.arguments) as Record<string, unknown>;
+  } catch {
+    // 如果解析失败，使用原始字符串
+  }
+
+  const argCount = Object.keys(parsedArgs).length;
+  const argPreview = argCount > 0 
+    ? Object.keys(parsedArgs).slice(0, 2).join(", ") + (argCount > 2 ? "..." : "")
+    : toolCall.arguments.slice(0, 50) + (toolCall.arguments.length > 50 ? "..." : "");
+
+  return (
+    <div className="text-xs text-gray-500 flex items-center gap-1.5">
+      <ToolOutlined className="text-blue-500" />
+      <span className="font-mono text-blue-600">{toolCall.name}</span>
+      {argPreview && (
+        <>
+          <span className="text-gray-400">·</span>
+          <span className="text-gray-500 truncate max-w-[200px]">{argPreview}</span>
+        </>
+      )}
+    </div>
+  );
+};
+
+// 工具响应展示组件（可折叠）
+const ToolResponseDisplay: React.FC<{ toolResponse: ToolResponse }> = ({
+  toolResponse,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  let parsedData: unknown = null;
+  let isJson = false;
+  let dataPreview = "";
+  
+  try {
+    parsedData = JSON.parse(toolResponse.responseData);
+    isJson = true;
+    const jsonStr = JSON.stringify(parsedData);
+    dataPreview = jsonStr.length > 100 ? jsonStr.slice(0, 100) + "..." : jsonStr;
+  } catch {
+    dataPreview = toolResponse.responseData.length > 100 
+      ? toolResponse.responseData.slice(0, 100) + "..." 
+      : toolResponse.responseData;
+  }
+
+  return (
+    <div className="my-1.5 text-xs">
+      <div 
+        className="flex items-center gap-2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {expanded ? (
+          <DownOutlined className="text-gray-400" />
+        ) : (
+          <RightOutlined className="text-gray-400" />
+        )}
+        <CheckCircleOutlined className="text-green-500" />
+        <span className="font-mono text-green-600">{toolResponse.name}</span>
+        <span className="text-gray-400">·</span>
+        <span className="text-gray-500 truncate flex-1">{dataPreview}</span>
+      </div>
+      {expanded && (
+        <div className="ml-5 mt-1.5 p-2 bg-gray-50 rounded border border-gray-200">
+          <div className="text-xs text-gray-600 font-mono">
+            {isJson ? (
+              <pre className="whitespace-pre-wrap break-words overflow-x-auto max-h-60 overflow-y-auto">
+                {JSON.stringify(parsedData, null, 2)}
+              </pre>
+            ) : (
+              <div className="whitespace-pre-wrap break-words">
+                {toolResponse.responseData}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
   messages,
@@ -35,22 +125,59 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
     <div>
       {messages.map((message) => {
         return (
-          <div className="mb-3" key={message.id}>
+          <div className="mb-4" key={message.id}>
+            {/* Assistant 消息 */}
             {message.role === "assistant" && (
               <Bubble
-                content={message.content}
+                content={
+                  <div className="w-full">
+                    {/* 工具调用展示 */}
+                    {message.metadata?.toolCalls &&
+                      message.metadata.toolCalls.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-2">
+                          {message.metadata.toolCalls.map((toolCall) => (
+                            <ToolCallDisplay key={toolCall.id} toolCall={toolCall} />
+                          ))}
+                        </div>
+                      )}
+                    {/* 消息内容 */}
+                    {message.content && (
+                      <div>
+                        <XMarkdown
+                          streaming={{ enableAnimation: false, hasNextChunk: true }}
+                        >
+                          {message.content}
+                        </XMarkdown>
+                      </div>
+                    )}
+                  </div>
+                }
                 placement="start"
-                contentRender={(content) => (
-                  <XMarkdown
-                    streaming={{ enableAnimation: false, hasNextChunk: true }}
-                  >
-                    {content}
-                  </XMarkdown>
-                )}
               />
             )}
+
+            {/* Tool 消息 - 简洁展示，不使用气泡 */}
+            {message.role === "tool" && message.metadata?.toolResponse && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%]">
+                  <ToolResponseDisplay toolResponse={message.metadata.toolResponse} />
+                </div>
+              </div>
+            )}
+
+            {/* User 消息 */}
             {message.role === "user" && (
               <Bubble content={message.content} placement="end" />
+            )}
+
+            {/* System 消息 */}
+            {message.role === "system" && (
+              <div className="flex justify-center">
+                <div className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full flex items-center gap-1">
+                  <RobotOutlined />
+                  <span>{message.content}</span>
+                </div>
+              </div>
             )}
           </div>
         );

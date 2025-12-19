@@ -26,8 +26,8 @@ public class ChatMessageConverter {
                 .sessionId(chatMessageDTO.getSessionId())
                 .role(chatMessageDTO.getRole().getRole())
                 .content(chatMessageDTO.getContent())
-                .metadata(chatMessageDTO.getMetadata() != null 
-                        ? objectMapper.writeValueAsString(chatMessageDTO.getMetadata()) 
+                .metadata(chatMessageDTO.getMetadata() != null
+                        ? objectMapper.writeValueAsString(chatMessageDTO.getMetadata())
                         : null)
                 .createdAt(chatMessageDTO.getCreatedAt())
                 .updatedAt(chatMessageDTO.getUpdatedAt())
@@ -43,8 +43,8 @@ public class ChatMessageConverter {
                 .sessionId(chatMessage.getSessionId())
                 .role(ChatMessageDTO.RoleType.fromRole(chatMessage.getRole()))
                 .content(chatMessage.getContent())
-                .metadata(chatMessage.getMetadata() != null 
-                        ? objectMapper.readValue(chatMessage.getMetadata(), ChatMessageDTO.MetaData.class) 
+                .metadata(chatMessage.getMetadata() != null
+                        ? objectMapper.readValue(chatMessage.getMetadata(), ChatMessageDTO.MetaData.class)
                         : null)
                 .createdAt(chatMessage.getCreatedAt())
                 .updatedAt(chatMessage.getUpdatedAt())

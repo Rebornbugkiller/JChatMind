@@ -1,7 +1,35 @@
+export type MessageType = "user" | "assistant" | "system" | "tool";
+
 export interface KnowledgeBase {
   knowledgeBaseId: string;
   name: string;
   description: string;
+}
+
+export interface ToolCall {
+  id: string;
+  type: string;
+  name: string;
+  arguments: string;
+}
+
+export interface ToolResponse {
+  id: string;
+  name: string;
+  responseData: string;
+}
+
+export interface ChatMessageVOMetadata {
+  toolCalls?: ToolCall[];
+  toolResponse?: ToolResponse;
+}
+
+export interface ChatMessageVO {
+  id: string;
+  sessionId: string;
+  role: MessageType;
+  content: string;
+  metadata?: ChatMessageVOMetadata;
 }
 
 export type SseMessageType =
@@ -12,7 +40,8 @@ export type SseMessageType =
   | "AI_DONE";
 
 export interface SseMessagePayload {
-  content: string;
+  message: ChatMessageVO;
+  statusText: string;
   done: boolean;
 }
 

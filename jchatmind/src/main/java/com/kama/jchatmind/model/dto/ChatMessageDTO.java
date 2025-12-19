@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,17 +29,10 @@ public class ChatMessageDTO {
     private LocalDateTime updatedAt;
 
     @Data
+    @Builder
     public static class MetaData {
-        private String toolCallId;
-        private List<ToolCall> toolCalls;
-    }
-
-    @Data
-    public static class ToolCall {
-        private String id;
-        private String type;
-        private String name;
-        private String arguments;
+        private ToolResponseMessage.ToolResponse toolResponse;
+        private List<AssistantMessage.ToolCall> toolCalls;
     }
 
     @Getter

@@ -1,5 +1,6 @@
 package com.kama.jchatmind.service;
 
+import com.kama.jchatmind.model.dto.ChatMessageDTO;
 import com.kama.jchatmind.model.request.CreateChatMessageRequest;
 import com.kama.jchatmind.model.request.UpdateChatMessageRequest;
 import com.kama.jchatmind.model.response.CreateChatMessageResponse;
@@ -9,6 +10,8 @@ public interface ChatMessageFacadeService {
     GetChatMessagesResponse getChatMessagesBySessionId(String sessionId);
 
     CreateChatMessageResponse createChatMessage(CreateChatMessageRequest request);
+
+    CreateChatMessageResponse createChatMessage(ChatMessageDTO chatMessageDTO);
 
     CreateChatMessageResponse agentCreateChatMessage(CreateChatMessageRequest request);
 
