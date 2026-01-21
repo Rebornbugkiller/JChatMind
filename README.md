@@ -5,20 +5,17 @@
 <!-- 项目展示区域 - 请在此处添加视频/图片 -->
 <div align="center">
 
-<!--
-在这里放置你的演示视频或 GIF
-例如：
-<video src="demo.mp4" width="800"></video>
-或
-![Demo](./assets/demo.gif)
--->
+![演示视频](./assets/demo.gif)
 
-<!--
-在这里放置项目截图
-例如：
-<img src="./assets/screenshot-1.png" width="800" alt="聊天界面" />
-<img src="./assets/screenshot-2.png" width="800" alt="知识库管理" />
--->
+<br/>
+
+### 📸 项目截图
+
+<img src="./assets/screenshot-chat.png" width="800" alt="智能对话界面" />
+
+<br/>
+
+<img src="./assets/screenshot-architecture.png" width="800" alt="系统架构图" />
 
 </div>
 <!-- 项目展示区域结束 -->
