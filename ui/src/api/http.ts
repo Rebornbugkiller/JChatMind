@@ -13,7 +13,7 @@ export interface RequestOptions extends RequestInit {
 }
 
 // API 基础路径（可以根据环境变量配置）
-export const BASE_URL = "http://localhost:8080/api";
+export const BASE_URL = "http://localhost:8081/api";
 
 /**
  * 构建完整的 URL（包含查询参数）

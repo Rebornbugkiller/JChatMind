@@ -123,7 +123,7 @@ const AgentChatView: React.FC = () => {
       return;
     }
     const es = new EventSource(
-      `http://localhost:8080/sse/connect/${chatSessionId}`,
+      `http://localhost:8081/sse/connect/${chatSessionId}`,
     );
     es.onmessage = (event) => {
       console.log("Received message:", event.data);
